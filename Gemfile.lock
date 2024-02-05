@@ -1,0 +1,48 @@
+GEM
+  remote: https://rubygems.org/
+  specs:
+    adelnor (0.0.8)
+      async (~> 2.6)
+      rack (~> 2.2)
+    async (2.8.1)
+      console (~> 1.10)
+      fiber-annotation
+      io-event (~> 1.1)
+      timers (~> 4.1)
+    chespirito (0.0.5)
+      adelnor
+      rack
+    connection_pool (2.4.1)
+    console (1.23.3)
+      fiber-annotation
+      fiber-local
+    fiber-annotation (0.2.0)
+    fiber-local (1.0.0)
+    io-event (1.4.3)
+    nio4r (2.7.0)
+    pg (1.5.4)
+    puma (6.4.2)
+      nio4r (~> 2.0)
+    rack (2.2.8)
+    rackup (1.0.0)
+      rack (< 3)
+      webrick
+    timers (4.3.5)
+    webrick (1.8.1)
+
+PLATFORMS
+  ruby
+  x86_64-linux
+
+DEPENDENCIES
+  adelnor (~> 0.0.8)
+  async
+  chespirito (~> 0.0.5)
+  connection_pool
+  pg
+  puma
+  rack
+  rackup
+
+BUNDLED WITH
+   2.5.3
