@@ -37,7 +37,6 @@ class AccountsController < Chespirito::Controller
     result  = service.create_transaction(account_id, amount, 
                                transaction_type, description)
 
-
     response.body = result.to_json
     response.status = 200
     response.headers['Content-Type'] = 'application/json'
