@@ -49,6 +49,3 @@ services:
         limits:
           cpus: '0.2'
           memory: '50MB'
-
-volumes:
-  rubygems:
