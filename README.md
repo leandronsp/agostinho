@@ -22,7 +22,7 @@ Uma versão Ruby bastante modesta da [rinha do backend 2ª edição](https://git
 * 1 NGINX
 
 ## Ruby é lento????? So far, so good
-<img width="1032" alt="Screenshot 2024-02-06 at 01 07 14" src="https://github.com/leandronsp/agostinho/assets/385640/6e938f89-5ebf-4915-8230-ff9b1383d942">
+<img width="1028" alt="Screenshot 2024-02-06 at 18 35 51" src="https://github.com/leandronsp/agostinho/assets/385640/a5cb5a00-50af-46ec-a781-435333ebe553">
 
 ## Usage
 
