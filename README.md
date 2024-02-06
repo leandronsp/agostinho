@@ -1,47 +1,69 @@
 # agostinho
-Uma versão Ruby bastante modesta da rinha de backend 2ª edição 2024/Q1
 
-## First things first
-
-```bash
-make bundle.install
-make start.dev
+```
+   __    ___  _____  ___  ____  ____  _  _  _   _  _____ 
+  /__\  / __)(  _  )/ __)(_  _)(_  _)( \( )( )_( )(  _  )
+ /(__)\( (_-. )(_)( \__ \  )(   _)(_  )  (  ) _ (  )(_)( 
+(__)(__)\___/(_____)(___/ (__) (____)(_)\_)(_) (_)(_____)
 ```
 
-## Testando
+Uma versão Ruby bastante modesta da [rinha do backend 2ª edição](https://github.com/zanfranceschi/rinha-de-backend-2024-q1) 2024/Q1
+
+## Requisitos
+
+* [Docker](https://docs.docker.com/get-docker/)
+* [Gatling](https://gatling.io/open-source/), a performance testing tool
+* Make (optional)
+
+## Stack
+
+* 2 Ruby 3.3 [+YJIT](https://shopify.engineering/ruby-yjit-is-production-ready) apps
+* 1 PostgreSQL
+* 1 NGINX
+
+## Ruby é lento????? So far, so good
+<img width="1043" alt="agostinho-gatling-001" src="https://github.com/leandronsp/agostinho/assets/385640/80f82e6c-747b-4e66-bd02-09882a4f8e2d">
+
+## Usage
 
 ```bash
-curl http://localhost:9999/clientes/42/extrato
+$ make help
 
-{
-  "saldo": {
-    "total": -9098,
-    "data_extrato": "2024-01-17T02:34:41.217753Z",
-    "limite": 100000
-  },
-  "ultimas_transacoes": [
-    {
-      "valor": 10,
-      "tipo": "c",
-      "descricao": "descricao",
-      "realizada_em": "2024-01-17T02:34:38.543030Z"
-    },
-    {
-      "valor": 90000,
-      "tipo": "d",
-      "descricao": "descricao",
-      "realizada_em": "2024-01-17T02:34:38.543030Z"
-    }
-  ]
-}
+Usage: make <target>
+  help                       Prints available commands
+  start.dev                  Start the rinha in Dev
+  start.prod                 Start the rinha in Prod
+  docker.stats               Show docker stats
+  health.check               Check the stack is healthy
+  stress.it                  Run stress tests
+  docker.build               Build the docker image
+  docker.push                Push the docker image
 ```
+
+## Inicializando a aplicação
 
 ```bash
-curl -X POST -d '{
-    "valor": 1000,
-    "tipo" : "c",
-    "descricao" : "descricao"
-}' http://localhost:9999/clientes/42/transacoes
+$ docker compose up -d nginx
 
-{"limite":100000,"saldo":-9098}
+# Ou então utilizando Make...
+$ make start.dev
 ```
+
+Testando a app:
+
+```bash
+$ curl -v http://localhost:9999/clientes/1/extrato
+```
+
+## Unleash the madness
+
+Colocando Gatling no barulho:
+
+```bash
+$ make stress.it 
+$ open stress-test/user-files/results/**/index.html
+```
+
+----
+
+[ASCII art generator](http://www.network-science.de/ascii/)
