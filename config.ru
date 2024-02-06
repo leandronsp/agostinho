@@ -2,10 +2,15 @@ require 'json'
 
 require 'chespirito'
 require 'adelnor'
+require 'puma'
+require 'rack/handler/puma'
 
 require_relative 'database_adapter'
 
 class AccountsController < Chespirito::Controller
+  class InvalidLimitAmountError < StandardError; end
+  class InvalidDataError < StandardError; end
+
   def bank_statement 
     result = {}
     account_id = request.params['account_id']
@@ -18,6 +23,8 @@ class AccountsController < Chespirito::Controller
     SQL
 
     query_result = execute_with_params(sql, [account_id]).first
+
+    raise PG::ForeignKeyViolation unless query_result
 
     result["saldo"] = {  
       "total": query_result['amount'],
@@ -47,6 +54,8 @@ class AccountsController < Chespirito::Controller
     response.body = result.to_json
     response.status = 200
     response.headers['Content-Type'] = 'application/json'
+  rescue PG::ForeignKeyViolation
+    response.status = 404
   end
 
   def create_transaction 
@@ -54,6 +63,20 @@ class AccountsController < Chespirito::Controller
     amount = request.params['valor']
     transaction_type = request.params['tipo']
     description = request.params['descricao']
+
+    raise InvalidDataError unless account_id && amount && transaction_type && description
+
+    sql = <<~SQL
+      SELECT accounts.id AS account_id, balances.amount AS amount, accounts.limit_amount AS limit_amount
+      FROM accounts 
+      JOIN balances ON balances.account_id = accounts.id
+      WHERE accounts.id = $1
+    SQL
+
+    query_result = execute_with_params(sql, [account_id]).first
+
+    raise PG::ForeignKeyViolation unless query_result
+    raise InvalidLimitAmountError if transaction_type == 'd' && (query_result['amount'].to_i - amount).abs > query_result['limit_amount'].to_i
 
     sql = <<~SQL
       INSERT INTO transactions (account_id, amount, transaction_type, description)
@@ -63,6 +86,8 @@ class AccountsController < Chespirito::Controller
     execute_with_params(sql, 
       [account_id, amount, transaction_type, description],
     )
+
+    raise InvalidDataError unless %w[d c].include?(transaction_type)
 
     case transaction_type
     in 'd'
@@ -97,6 +122,10 @@ class AccountsController < Chespirito::Controller
 
     response.status = 200
     response.headers['Content-Type'] = 'application/json'
+  rescue PG::ForeignKeyViolation
+    response.status = 404
+  rescue InvalidLimitAmountError, PG::InvalidTextRepresentation, InvalidDataError, PG::StringDataRightTruncation
+    response.status = 422
   end
   
   def execute_with_params(sql, params)
@@ -111,4 +140,5 @@ RinhaApp = Chespirito::App.configure do |app|
   app.register_route('POST', '/clientes/:account_id/transacoes', [AccountsController, :create_transaction])
 end
 
+#Rack::Handler::Puma.run RinhaApp, Port: 3000, Threads: '0:5'
 Adelnor::Server.run RinhaApp, 3000, thread_pool: 5

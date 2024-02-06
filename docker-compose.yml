@@ -13,6 +13,11 @@ services:
       - rubygems:/usr/local/bundle
     depends_on:
       - postgres
+    deploy:
+      resources:
+        limits:
+          cpus: '0.3'
+          memory: '150MB'
 
   api2: 
     <<: *api
@@ -29,6 +34,11 @@ services:
       - ./init.sql:/docker-entrypoint-initdb.d/init.sql
       - ./postgresql.conf:/etc/postgresql/postgresql.conf
     command: postgres -c config_file=/etc/postgresql/postgresql.conf
+    deploy:
+      resources:
+        limits:
+          cpus: '0.7'
+          memory: '200MB'
 
   nginx:
     image: nginx 
@@ -40,6 +50,11 @@ services:
     depends_on:
       - api1
       - api2
+    deploy:
+      resources:
+        limits:
+          cpus: '0.2'
+          memory: '50MB'
 
 volumes:
   rubygems:
