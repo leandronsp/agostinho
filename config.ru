@@ -1,11 +1,35 @@
 require 'json'
 
+require 'pg'
+require 'connection_pool'
+
 require 'chespirito'
 require 'adelnor'
 require 'puma'
 require 'rack/handler/puma'
 
-require_relative 'database_adapter'
+class DatabaseAdapter
+  POOL_SIZE = ENV['DB_POOL_SIZE'] || 5
+
+  def self.pool
+    @pool ||= ConnectionPool.new(size: POOL_SIZE, timeout: 300) do
+      PG.connect(configuration)
+    end
+  end
+
+  def self.new_connection
+    PG.connect(configuration)
+  end
+
+  def self.configuration
+    {
+      host: 'postgres',
+      dbname: 'postgres',
+      user: 'postgres',
+      password: 'postgres'
+    }
+  end
+end
 
 class AccountsController < Chespirito::Controller
   class InvalidLimitAmountError < StandardError; end

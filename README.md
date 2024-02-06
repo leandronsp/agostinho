@@ -53,6 +53,9 @@ Testando a app:
 
 ```bash
 $ curl -v http://localhost:9999/clientes/1/extrato
+
+# Ou então utilizando Make...
+$ make health.check
 ```
 
 ## Unleash the madness
