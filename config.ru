@@ -15,45 +15,51 @@ class AccountsController < Chespirito::Controller
     result = {}
     account_id = request.params['account_id']
 
-    sql = <<~SQL
-      SELECT accounts.id AS account_id, balances.amount AS amount, accounts.limit_amount AS limit_amount
-      FROM accounts 
-      JOIN balances ON balances.account_id = accounts.id
-      WHERE accounts.id = $1
-    SQL
+    conn = DatabaseAdapter.pool.checkout
 
-    query_result = execute_with_params(sql, [account_id]).first
+    conn.transaction do
+      sql = <<~SQL
+        SELECT accounts.id AS account_id, balances.amount AS amount, accounts.limit_amount AS limit_amount
+        FROM accounts 
+        JOIN balances ON balances.account_id = accounts.id
+        WHERE accounts.id = $1
+        FOR UPDATE
+      SQL
 
-    raise PG::ForeignKeyViolation unless query_result
+      query_result = conn.exec_params(sql, [account_id]).first
 
-    result["saldo"] = {  
-      "total": query_result['amount'],
-      "data_extrato": Time.now.strftime("%Y-%m-%d"),
-      "limite": query_result['limit_amount']
-    }
+      raise PG::ForeignKeyViolation unless query_result
 
-    sql = <<~SQL
-      SELECT amount, transaction_type, description, date
-      FROM transactions
-      WHERE transactions.account_id = $1
-      ORDER BY date DESC
-      LIMIT 10
-    SQL
-
-    query_result = execute_with_params(sql, [account_id])
-
-    result["ultimas_transacoes"] = query_result.map do |transaction|
-      { 
-        "valor": transaction['amount'],
-        "tipo": transaction['transaction_type'],
-        "descricao": transaction['description'],
-        "realizada_em": transaction['date']
+      result["saldo"] = {  
+        "total": query_result['amount'],
+        "data_extrato": Time.now.strftime("%Y-%m-%d"),
+        "limite": query_result['limit_amount']
       }
-    end
 
-    response.body = result.to_json
-    response.status = 200
-    response.headers['Content-Type'] = 'application/json'
+      sql = <<~SQL
+        SELECT amount, transaction_type, description, date
+        FROM transactions
+        WHERE transactions.account_id = $1
+        ORDER BY date DESC
+        LIMIT 10
+        FOR UPDATE
+      SQL
+
+      query_result = conn.exec_params(sql, [account_id])
+
+      result["ultimas_transacoes"] = query_result.map do |transaction|
+        { 
+          "valor": transaction['amount'],
+          "tipo": transaction['transaction_type'],
+          "descricao": transaction['description'],
+          "realizada_em": transaction['date']
+        }
+      end
+
+      response.body = result.to_json
+      response.status = 200
+      response.headers['Content-Type'] = 'application/json'
+    end
   rescue PG::ForeignKeyViolation
     response.status = 404
   end
@@ -65,73 +71,74 @@ class AccountsController < Chespirito::Controller
     description = request.params['descricao']
 
     raise InvalidDataError unless account_id && amount && transaction_type && description
+    raise InvalidDataError if description && description.empty?
 
-    sql = <<~SQL
-      SELECT accounts.id AS account_id, balances.amount AS amount, accounts.limit_amount AS limit_amount
-      FROM accounts 
-      JOIN balances ON balances.account_id = accounts.id
-      WHERE accounts.id = $1
-    SQL
+    conn = DatabaseAdapter.pool.checkout
 
-    query_result = execute_with_params(sql, [account_id]).first
-
-    raise PG::ForeignKeyViolation unless query_result
-    raise InvalidLimitAmountError if transaction_type == 'd' && (query_result['amount'].to_i - amount).abs > query_result['limit_amount'].to_i
-
-    sql = <<~SQL
-      INSERT INTO transactions (account_id, amount, transaction_type, description)
-      VALUES ($1, $2, $3, $4)
-    SQL
-
-    execute_with_params(sql, 
-      [account_id, amount, transaction_type, description],
-    )
-
-    raise InvalidDataError unless %w[d c].include?(transaction_type)
-
-    case transaction_type
-    in 'd'
+    conn.transaction do
       sql = <<~SQL
-        UPDATE balances 
-        SET amount = amount - $2
-        WHERE account_id = $1
+        SELECT accounts.id AS account_id, balances.amount AS amount, accounts.limit_amount AS limit_amount
+        FROM accounts 
+        JOIN balances ON balances.account_id = accounts.id
+        WHERE accounts.id = $1
+        FOR UPDATE
       SQL
-    in 'c'
+
+      query_result = conn.exec_params(sql, [account_id]).first
+
+      raise PG::ForeignKeyViolation unless query_result
+      raise InvalidLimitAmountError if transaction_type == 'd' && (query_result['amount'].to_i - amount).abs > query_result['limit_amount'].to_i
+
       sql = <<~SQL
-        UPDATE balances 
-        SET amount = amount + $2
-        WHERE account_id = $1
+        INSERT INTO transactions (account_id, amount, transaction_type, description)
+        VALUES ($1, $2, $3, $4)
       SQL
+
+      conn.exec_params(sql, 
+        [account_id, amount, transaction_type, description],
+      )
+
+      raise InvalidDataError unless %w[d c].include?(transaction_type)
+
+      case transaction_type
+      in 'd'
+        sql = <<~SQL
+          UPDATE balances 
+          SET amount = amount - $2
+          WHERE account_id = $1
+        SQL
+      in 'c'
+        sql = <<~SQL
+          UPDATE balances 
+          SET amount = amount + $2
+          WHERE account_id = $1
+        SQL
+      end
+      
+      conn.exec_params(sql, [account_id, amount])
+
+      sql = <<~SQL
+        SELECT accounts.id AS account_id, balances.amount AS amount, accounts.limit_amount AS limit_amount
+        FROM accounts 
+        JOIN balances ON balances.account_id = accounts.id
+        WHERE accounts.id = $1
+        FOR UPDATE
+      SQL
+
+      result = conn.exec_params(sql, [account_id]).first
+
+      response.body = { 
+        limite: result['limit_amount'],
+        saldo: result['amount']
+      }.to_json
+
+      response.status = 200
+      response.headers['Content-Type'] = 'application/json'
     end
-    
-    execute_with_params(sql, [account_id, amount])
-
-    sql = <<~SQL
-      SELECT accounts.id AS account_id, balances.amount AS amount, accounts.limit_amount AS limit_amount
-      FROM accounts 
-      JOIN balances ON balances.account_id = accounts.id
-      WHERE accounts.id = $1
-    SQL
-
-    result = execute_with_params(sql, [account_id]).first
-
-    response.body = { 
-      limite: result['limit_amount'],
-      saldo: result['amount']
-    }.to_json
-
-    response.status = 200
-    response.headers['Content-Type'] = 'application/json'
   rescue PG::ForeignKeyViolation
     response.status = 404
   rescue InvalidLimitAmountError, PG::InvalidTextRepresentation, InvalidDataError, PG::StringDataRightTruncation
     response.status = 422
-  end
-  
-  def execute_with_params(sql, params)
-    DatabaseAdapter.pool.with do |conn|
-      conn.exec_params(sql, params)
-    end
   end
 end
 

@@ -6,7 +6,7 @@ services:
     container_name: api1
     environment:
       - RUBY_YJIT_ENABLE=1
-      - DB_POOL_SIZE=10
+      - DB_POOL_SIZE=5
     command: rackup
     volumes:
       - .:/app

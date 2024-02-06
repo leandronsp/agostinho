@@ -18,7 +18,7 @@ docker.stats: ## Show docker stats
 	@docker stats --format "table {{.Name}}\t{{.CPUPerc}}\t{{.MemUsage}}\t{{.MemPerc}}"
 
 health.check: ## Check the stack is healthy
-	@curl -v http://localhost:9999/contagem-pessoas
+	@curl -v http://localhost:9999/clientes/1/extrato
 
 stress.it: ## Run stress tests
 	@sh stress-test/run-test.sh
