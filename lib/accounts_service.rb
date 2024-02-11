@@ -55,7 +55,9 @@ class AccountsService
 
     conn.transaction do
       sql = <<~SQL
-        SELECT accounts.id AS account_id, balances.amount AS amount, accounts.limit_amount AS limit_amount
+        SELECT 
+          balances.amount AS amount, 
+          accounts.limit_amount AS limit_amount
         FROM accounts 
         JOIN balances ON balances.account_id = accounts.id
         WHERE accounts.id = $1
@@ -66,8 +68,9 @@ class AccountsService
 
       raise PG::ForeignKeyViolation unless query_result
 
-      if transaction_type == 'd' && 
-          (query_result['amount'].to_i - amount).abs > query_result['limit_amount'].to_i
+      if transaction_type == 'd' && reaching_limit?(query_result['amount'].to_i, 
+                                                    query_result['limit_amount'].to_i, 
+                                                    amount.to_i)
         raise InvalidLimitAmountError 
       end
 
@@ -119,6 +122,11 @@ class AccountsService
   end
 
   private
+
+  def reaching_limit?(balance, limit_amount, amount)
+    return false if (balance - amount) > limit_amount
+    (balance - amount).abs > limit_amount
+  end
 
   def conn
     DatabaseAdapter.pool.checkout
