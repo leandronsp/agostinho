@@ -13,5 +13,5 @@ gem 'puma'
 gem 'adelnor', '~> 0.0.8'
 
 # Rack apps
-gem 'chespirito', '~> 0.0.5'
+gem 'chespirito', '~> 0.0.6'
 gem 'async'

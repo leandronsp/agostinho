@@ -9,7 +9,7 @@ GEM
       fiber-annotation
       io-event (~> 1.1)
       timers (~> 4.1)
-    chespirito (0.0.5)
+    chespirito (0.0.6)
       adelnor
       rack
     connection_pool (2.4.1)
@@ -37,7 +37,7 @@ PLATFORMS
 DEPENDENCIES
   adelnor (~> 0.0.8)
   async
-  chespirito (~> 0.0.5)
+  chespirito (~> 0.0.6)
   connection_pool
   pg
   puma
