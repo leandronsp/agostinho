@@ -10,7 +10,7 @@ import io.gatling.core.Predef._
 import io.gatling.http.Predef._
 
 
-class RinhaBackendCrebitosSimulation
+class RinhaBackendSimulation
   extends Simulation {
 
   def randomClienteId() = Random.between(1, 5 + 1)
