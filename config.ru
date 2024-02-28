@@ -5,8 +5,6 @@ require 'connection_pool'
 
 require 'chespirito'
 require 'adelnor'
-require 'puma'
-require 'rack/handler/puma'
 
 require_relative 'lib/accounts_service'
 
