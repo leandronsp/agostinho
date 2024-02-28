@@ -56,5 +56,4 @@ RinhaApp = Chespirito::App.configure do |app|
                      [AccountsController, :create_transaction])
 end
 
-#Rack::Handler::Puma.run RinhaApp, Port: 3000, Threads: '0:5'
 Adelnor::Server.run RinhaApp, 3000, thread_pool: 5

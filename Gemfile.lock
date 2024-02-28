@@ -19,10 +19,7 @@ GEM
     fiber-annotation (0.2.0)
     fiber-local (1.0.0)
     io-event (1.4.3)
-    nio4r (2.7.0)
     pg (1.5.4)
-    puma (6.4.2)
-      nio4r (~> 2.0)
     rack (2.2.8)
     rackup (1.0.0)
       rack (< 3)
@@ -36,11 +33,9 @@ PLATFORMS
 
 DEPENDENCIES
   adelnor (~> 0.0.8)
-  async
   chespirito (~> 0.0.6)
   connection_pool
   pg
-  puma
   rack
   rackup
 

@@ -9,9 +9,5 @@ gem 'connection_pool'
 # Rack
 gem 'rack'
 gem 'rackup'
-gem 'puma'
 gem 'adelnor', '~> 0.0.8'
-
-# Rack apps
 gem 'chespirito', '~> 0.0.6'
-gem 'async'
